@@ -1,6 +1,7 @@
 # radixdlt-java
 
 [![](https://jitpack.io/v/com.radixdlt/radixdlt-java.svg)](https://jitpack.io/#com.radixdlt/radixdlt-java) [![Build Status](https://travis-ci.org/radixdlt/radixdlt-java.svg?branch=master)](https://travis-ci.org/radixdlt/radixdlt-java) [![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=com.radixdlt%3Aradixdlt-java%3Aradixdlt-java&metric=alert_status)](https://sonarcloud.io/dashboard?id=com.radixdlt%3Aradixdlt-java%3Aradixdlt-java) [![Reliability](https://sonarcloud.io/api/project_badges/measure?project=com.radixdlt%3Aradixdlt-java%3Aradixdlt-java&metric=reliability_rating)](https://sonarcloud.io/component_measures?id=com.radixdlt%3Aradixdlt-java%3Aradixdlt-java&metric=reliability_rating) [![Security](https://sonarcloud.io/api/project_badges/measure?project=com.radixdlt%3Aradixdlt-java%3Aradixdlt-java&metric=security_rating)](https://sonarcloud.io/component_measures?id=com.radixdlt%3Aradixdlt-java%3Aradixdlt-java&metric=security_rating) [![Code Corevage](https://sonarcloud.io/api/project_badges/measure?project=com.radixdlt%3Aradixdlt-java%3Aradixdlt-java&metric=coverage)](https://sonarcloud.io/component_measures?id=com.radixdlt%3Aradixdlt-java%3Aradixdlt-java&metric=Coverage)
+[![License MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 radixdlt-java is a Java/Android Client library for interacting with a [Radix](https://www.radixdlt.com) Distributed Ledger.
 
@@ -129,3 +130,29 @@ To get a stream of the balance of TEST tokens in my account:
 Observable<Amount> balance = api.getMyBalance(Asset.TEST);
 balance.subscribe(bal -> { ... });
 ```
+
+## Contribute
+
+Contributions are welcome, we simply ask to:
+
+* Fork the codebase
+* Make changes
+* Submit a pull request for review
+
+When contributing to this repository, we recommend to discuss the change you wish to make via issue,
+email, or any other method with the owners of this repository before making a change. 
+
+Please follow our [Code of Conduct](CODE_OF_CONDUCT.md) in all your interactions with the project.
+
+## Links
+
+| Link | Description |
+| :----- | :------ |
+[radixdlt.com](https://radixdlt.com/) | Radix DLT Homepage
+[documentation](https://docs.radixdlt.com/) | Radix Knowledge Base
+[forum](https://forum.radixdlt.com/) | Radix Technical Forum
+[@radixdlt](https://twitter.com/radixdlt) | Follow Radix DLT on Twitter
+
+## License
+
+radixdlt-java is released under the [MIT License](LICENSE).
