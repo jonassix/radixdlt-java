@@ -1,4 +1,4 @@
-# Contributor Covenant Code of Conduct
+# Radix DLT Code of Conduct
 
 ## Our Pledge
 
