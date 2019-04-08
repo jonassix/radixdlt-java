@@ -125,7 +125,6 @@ public class RadixJsonRpcClient {
 	 * @return response from rpc method
 	 */
 	public Single<JsonRpcResponse> jsonRpcCall(String method, JsonObject params) {
-		System.out.println(method);
 		return Single.create(emitter -> {
 			final String uuid = UUID.randomUUID().toString();
 
@@ -388,6 +387,7 @@ public class RadixJsonRpcClient {
 	 */
 	public Observable<NodeAtomSubmissionUpdate> submitAtom(Atom atom) {
 		return Observable.create(emitter -> {
+			// TODO expose
 			SubmissionMode mode = SubmissionMode.CBOR;
 			JsonObject params = new JsonObject();
 			if (mode == SubmissionMode.CBOR) {
