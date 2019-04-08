@@ -29,10 +29,6 @@ public class DiscoverSingleNodeEpic implements RadixNetworkEpic {
 
 	@Override
 	public Observable<RadixNodeAction> epic(Observable<RadixNodeAction> updates, Observable<RadixNetworkState> networkState) {
-		Observable<RadixNodeAction> getUniverse = updates
-			.ofType(DiscoverMoreNodesAction.class)
-			.map(a -> GetUniverseRequestAction.of(node));
-
 		// TODO: Store universes in node table instead and filter out node in FindANodeEpic
 		Observable<RadixNodeAction> seedUniverseMismatch = updates
 			.ofType(GetUniverseResponseAction.class)
@@ -47,6 +43,11 @@ public class DiscoverSingleNodeEpic implements RadixNetworkEpic {
 			.publish()
 			.autoConnect(2);
 
+		Observable<RadixNodeAction> getUniverse = updates
+			.ofType(DiscoverMoreNodesAction.class)
+			.map(a -> GetUniverseRequestAction.of(node))
+			.takeUntil(connected)
+			.ofType(RadixNodeAction.class);
 
 		Observable<RadixNodeAction> addNode = connected.map(AddNodeAction::of);
 		Observable<RadixNodeAction> addData = connected.map(GetNodeDataRequestAction::of);

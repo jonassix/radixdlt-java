@@ -4,6 +4,7 @@ import com.radixdlt.client.core.ledger.AtomEvent;
 import java.util.List;
 import java.util.UUID;
 
+import com.radixdlt.client.core.util.Base58;
 import org.json.JSONObject;
 import org.radix.common.ID.EUID;
 import org.radix.serialization2.DsonOutput.Output;
@@ -124,6 +125,7 @@ public class RadixJsonRpcClient {
 	 * @return response from rpc method
 	 */
 	public Single<JsonRpcResponse> jsonRpcCall(String method, JsonObject params) {
+		System.out.println(method);
 		return Single.create(emitter -> {
 			final String uuid = UUID.randomUUID().toString();
 
@@ -372,6 +374,11 @@ public class RadixJsonRpcClient {
 		}
 	}
 
+	enum SubmissionMode {
+		JSON,
+		CBOR
+	}
+
 	/**
 	 * Attempt to submit an atom to a node. Returns the status of the atom as it
 	 * gets stored on the node.
@@ -381,15 +388,24 @@ public class RadixJsonRpcClient {
 	 */
 	public Observable<NodeAtomSubmissionUpdate> submitAtom(Atom atom) {
 		return Observable.create(emitter -> {
-			JSONObject jsonAtomTemp = Serialize.getInstance().toJsonObject(atom, Output.API);
-			JsonElement jsonAtom = GsonJson.getInstance().toGson(jsonAtomTemp);
+			SubmissionMode mode = SubmissionMode.CBOR;
+			JsonObject params = new JsonObject();
+			if (mode == SubmissionMode.CBOR) {
+				String stringAtom = Base58.toBase58(Serialize.getInstance().toDson(atom, Output.API));
+				params.addProperty("atom", stringAtom);
+			} else if (mode == SubmissionMode.JSON) {
+				JSONObject jsonAtomTemp = Serialize.getInstance().toJsonObject(atom, Output.API);
+				JsonElement encodedAtom = GsonJson.getInstance().toGson(jsonAtomTemp);
+				params.add("atom", encodedAtom);
+			} else {
+				throw new IllegalStateException("Unknown mode " + mode);
+			}
 
 			final String subscriberId = UUID.randomUUID().toString();
-			JsonObject params = new JsonObject();
+			params.addProperty("mode", mode.name().toLowerCase());
 			params.addProperty("subscriberId", subscriberId);
-			params.add("atom", jsonAtom);
 
-			LOGGER.debug("Submitting atom for {}: {}", subscriberId, jsonAtomTemp);
+			LOGGER.debug("Submitting atom for {}: {}", subscriberId, params.get("atom"));
 
 			Disposable messageListenerDisposable = messages.filter(msg -> msg.has("method"))
 				.filter(msg -> msg.get("method").getAsString().equals("AtomSubmissionState.onNext"))

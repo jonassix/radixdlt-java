@@ -18,6 +18,9 @@ import com.radixdlt.client.core.network.websocket.WebSocketStatus;
 import com.radixdlt.client.core.util.IncreasingRetryTimer;
 import io.reactivex.Completable;
 import io.reactivex.Observable;
+
+import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -28,6 +31,7 @@ public final class SubmitAtomEpic implements RadixNetworkEpic {
 	private static final int DELAY_CLOSE_SECS = 5;
 
 	private final WebSockets webSockets;
+	private final Map<WebSocketClient, RadixJsonRpcClient> rpcClients = new WeakHashMap<>();
 
 	public SubmitAtomEpic(WebSockets webSockets) {
 		this.webSockets = webSockets;
@@ -47,8 +51,8 @@ public final class SubmitAtomEpic implements RadixNetworkEpic {
 	}
 
 	private Observable<RadixNodeAction> submitAtom(SubmitAtomSendAction request, RadixNode node) {
-		final WebSocketClient ws = webSockets.get(node);
-		final RadixJsonRpcClient jsonRpcClient = new RadixJsonRpcClient(ws);
+		final WebSocketClient webSocket = webSockets.get(node);
+		final RadixJsonRpcClient jsonRpcClient = rpcClients.computeIfAbsent(webSocket, RadixJsonRpcClient::new);
 		return jsonRpcClient.submitAtom(request.getAtom())
 			.doOnError(Throwable::printStackTrace)
 			.<RadixNodeAction>map(nodeUpdate -> {
@@ -60,7 +64,7 @@ public final class SubmitAtomEpic implements RadixNetworkEpic {
 			})
 			.retryWhen(new IncreasingRetryTimer(WebSocketException.class))
 			// TODO: Better way of cleanup?
-			.doFinally(() -> Observable.timer(DELAY_CLOSE_SECS, TimeUnit.SECONDS).subscribe(t -> ws.close()));
+			.doFinally(() -> Observable.timer(DELAY_CLOSE_SECS, TimeUnit.SECONDS).subscribe(t -> webSocket.close()));
 	}
 
 	@Override
