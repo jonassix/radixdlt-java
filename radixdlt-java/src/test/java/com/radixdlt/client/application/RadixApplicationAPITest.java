@@ -320,7 +320,7 @@ public class RadixApplicationAPITest {
 		RadixAddress address = mock(RadixAddress.class);
 		when(address.getUID()).thenReturn(EUID.ONE);
 		when(particle.getShardables()).thenReturn(Collections.singleton(address));
-		Atom atom = new Atom(Collections.singletonList(ParticleGroup.of(SpunParticle.up(particle))), 0L);
+		Atom atom = Atom.create(Collections.singletonList(ParticleGroup.of(SpunParticle.up(particle))), 0L);
 		RadixIdentity identity = mock(RadixIdentity.class);
 		when(identity.sign(any())).thenReturn(Single.just(atom));
 		RadixUniverse universe = mock(RadixUniverse.class);

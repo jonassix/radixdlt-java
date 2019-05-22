@@ -19,13 +19,13 @@ import static org.mockito.Mockito.when;
 public class AtomTest {
 	@Test
 	public void testEmptyAtom() {
-		Atom atom = new Atom(Collections.emptyList(), 0L);
+		Atom atom = Atom.create(Collections.emptyList(), 0L);
 
 		/// The origin of these hashes are this library it self, commit: acbc5307cf5c9f7e1c30300f7438ef5dbc3bb629
 		/// These hashes can be used as a reference for other Radix libraries, e.g. Swift.
 
 		assertEquals("e50964da69e6672a98d5e3c1b1d73fb3", atom.getHid().toHexString());
-		assertEquals("Two empty atoms should equal", atom, new Atom(Collections.emptyList(), 0L));
+		assertEquals("Two empty atoms should equal", atom, Atom.create(Collections.emptyList(), 0L));
 
 		byte[] seed = Hash.sha256("Radix".getBytes(StandardCharsets.UTF_8));
 		ECKeyPair ecKeyPair = new ECKeyPair(seed);
@@ -41,7 +41,7 @@ public class AtomTest {
 		when(particle0.getShardables()).thenReturn(Collections.singleton(address));
 		Particle particle1 = mock(Particle.class);
 		when(particle1.getShardables()).thenReturn(Collections.singleton(address));
-		Atom atom = new Atom(ParticleGroup.of(SpunParticle.up(particle0), SpunParticle.up(particle1)), 0L);
+		Atom atom = Atom.create(ParticleGroup.of(SpunParticle.up(particle0), SpunParticle.up(particle1)), 0L);
 		assertThat(atom.addresses()).containsExactly(address);
 	}
 }

@@ -95,7 +95,7 @@ public class RadixJsonRpcClientTest {
 			String id = jsonObject.get("id").getAsString();
 
 			JsonArray atoms = new JsonArray();
-			Atom atom = new Atom(Collections.emptyList(), 0L);
+			Atom atom = Atom.create(Collections.emptyList(), 0L);
 			String atomJson = Serialize.getInstance().toJson(atom, Output.API);
 			atoms.add(parser.parse(atomJson));
 
@@ -144,7 +144,7 @@ public class RadixJsonRpcClientTest {
 			params.addProperty("subscriberId", subscriberId);
 
 			JsonArray atomEvents = new JsonArray();
-			Atom atom = new Atom(Collections.emptyList(), 0L);
+			Atom atom = Atom.create(Collections.emptyList(), 0L);
 			AtomEvent atomEvent = new AtomEvent(atom, AtomEventType.STORE);
 			JsonElement atomEventJson = parser.parse(Serialize.getInstance().toJson(atomEvent, Output.API));
 			atomEvents.add(atomEventJson);
@@ -196,7 +196,7 @@ public class RadixJsonRpcClientTest {
 				notification.addProperty("method", "Atoms.subscribeUpdate");
 				JsonObject params = new JsonObject();
 				params.addProperty("subscriberId", subscriberId);
-				Atom atomObject = new Atom(Collections.emptyList(), 0L);
+				Atom atomObject = Atom.create(Collections.emptyList(), 0L);
 				JsonElement atom = parser.parse(Serialize.getInstance().toJson(atomObject, Output.API));
 				JsonArray atoms = new JsonArray();
 				atoms.add(atom);
@@ -265,7 +265,7 @@ public class RadixJsonRpcClientTest {
 		TestObserver<NodeAtomSubmissionUpdate> observer = new TestObserver<>();
 
 		jsonRpcClient.submitAtom(
-			new Atom(Collections.emptyList(), 0L)
+			Atom.create(Collections.emptyList(), 0L)
 		).subscribe(observer);
 
 		observer.assertNoErrors();

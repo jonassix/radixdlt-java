@@ -817,12 +817,12 @@ public class RadixApplicationAPI {
 		List<ParticleGroup> allParticleGroups = new ArrayList<>(particleGroups);
 		Map<String, String> metaData = new HashMap<>();
 		metaData.put(Atom.METADATA_TIMESTAMP_KEY, String.valueOf(generateTimestamp()));
-		Atom atom = new Atom(particleGroups, metaData);
+		Atom atom = Atom.create(particleGroups, metaData);
 		Pair<Map<String, String>, List<ParticleGroup>> fee = this.feeMapper.map(atom, this.universe, this.getMyPublicKey());
 		allParticleGroups.addAll(fee.getSecond());
 		metaData.putAll(fee.getFirst());
 
-		return new UnsignedAtom(new Atom(allParticleGroups, metaData));
+		return new UnsignedAtom(Atom.create(allParticleGroups, metaData));
 	}
 
 	/**
