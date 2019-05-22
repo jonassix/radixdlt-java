@@ -1,6 +1,7 @@
 package com.radixdlt.client.core.atoms;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.radixdlt.client.atommodel.message.MessageParticle;
 import com.radixdlt.client.atommodel.tokens.TransferrableTokensParticle;
@@ -41,48 +42,50 @@ public final class Atom extends SerializableObject {
 
 	@JsonProperty("particleGroups")
 	@DsonOutput(DsonOutput.Output.ALL)
-	private final List<ParticleGroup> particleGroups = new ArrayList<>();
+	private final ImmutableList<ParticleGroup> particleGroups;
 
 	@JsonProperty("signatures")
 	@DsonOutput(value = {DsonOutput.Output.API, DsonOutput.Output.WIRE, DsonOutput.Output.PERSIST})
-	private final Map<String, ECSignature> signatures = new HashMap<>();
+	private final ImmutableMap<String, ECSignature> signatures;
 
 	@JsonProperty("metaData")
 	@DsonOutput(DsonOutput.Output.ALL)
 	private final ImmutableMap<String, String> metaData;
 
 	private Atom() {
-		this.metaData = ImmutableMap.of(METADATA_TIMESTAMP_KEY, String.valueOf(0));
+		this.metaData = null;
+		this.signatures = null;
+		this.particleGroups = null;
 	}
 
 	private Atom(
-		List<ParticleGroup> particleGroups,
-		Map<String, String> metaData,
-		Map<String, ECSignature> signatures
+		ImmutableList<ParticleGroup> particleGroups,
+		ImmutableMap<String, String> metaData,
+		ImmutableMap<String, ECSignature> signatures
 	) {
 		Objects.requireNonNull(particleGroups, "particleGroups is required");
 		Objects.requireNonNull(metaData, "metaData is required");
 		Objects.requireNonNull(signatures, "signatures are required");
 
-		this.particleGroups.addAll(particleGroups);
-		this.metaData = ImmutableMap.copyOf(metaData);
-		this.signatures.putAll(signatures);
+		this.particleGroups = particleGroups;
+		this.metaData = metaData;
+		this.signatures = signatures;
 	}
 
 	public static Atom create(ParticleGroup particleGroup, long timestamp) {
 		return new Atom(
-			Collections.singletonList(particleGroup),
+			ImmutableList.of(particleGroup),
 			ImmutableMap.of(METADATA_TIMESTAMP_KEY, String.valueOf(timestamp)),
 			ImmutableMap.of()
 		);
 	}
 
 	public static Atom create(List<ParticleGroup> particleGroups, long timestamp) {
-		return new Atom(particleGroups, ImmutableMap.of(METADATA_TIMESTAMP_KEY, String.valueOf(timestamp)), ImmutableMap.of());
+		return new Atom(ImmutableList.copyOf(particleGroups), ImmutableMap.of(METADATA_TIMESTAMP_KEY, String.valueOf(timestamp)), ImmutableMap.of());
 	}
 
 	public static Atom create(List<ParticleGroup> particleGroups, Map<String, String> metaData) {
-		return new Atom(particleGroups, metaData, ImmutableMap.of());
+		return new Atom(ImmutableList.copyOf(particleGroups), ImmutableMap.copyOf(metaData), ImmutableMap.of());
 	}
 
 	public Atom withSignature(ECSignature signature, EUID signatureId) {
