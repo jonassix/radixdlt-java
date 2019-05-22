@@ -1,5 +1,7 @@
 package com.radixdlt.client.application;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.radixdlt.client.application.translate.ShardedParticleStateId;
 import com.radixdlt.client.application.translate.tokens.TokenUnitConversions;
 import com.radixdlt.client.core.BootstrapConfig;
@@ -809,6 +811,7 @@ public class RadixApplicationAPI {
 	/**
 	 * Returns an unsigned atom with the appropriate fees given a list of
 	 * particle groups to compose the atom.
+	 * TODO: Clean up all the copying
 	 *
 	 * @param particleGroups particle groups to include in atom
 	 * @return unsigned atom with appropriate fees
@@ -822,7 +825,7 @@ public class RadixApplicationAPI {
 		allParticleGroups.addAll(fee.getSecond());
 		metaData.putAll(fee.getFirst());
 
-		return new UnsignedAtom(Atom.create(allParticleGroups, metaData));
+		return new UnsignedAtom(ImmutableList.copyOf(allParticleGroups), ImmutableMap.copyOf(metaData));
 	}
 
 	/**

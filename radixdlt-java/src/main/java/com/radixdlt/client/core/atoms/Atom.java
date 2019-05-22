@@ -88,11 +88,14 @@ public final class Atom extends SerializableObject {
 		return new Atom(ImmutableList.copyOf(particleGroups), ImmutableMap.copyOf(metaData), ImmutableMap.of());
 	}
 
-	public Atom withSignature(ECSignature signature, EUID signatureId) {
+	public Atom addSignature(ECSignature signature, EUID signatureId) {
 		return new Atom(
 			this.particleGroups,
 			this.metaData,
-			ImmutableMap.of(signatureId.toString(), signature)
+			ImmutableMap.<String, ECSignature>builder()
+				.putAll(this.signatures)
+				.put(signatureId.toString(), signature)
+				.build()
 		);
 	}
 
