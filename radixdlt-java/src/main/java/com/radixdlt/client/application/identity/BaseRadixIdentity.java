@@ -3,7 +3,6 @@ package com.radixdlt.client.application.identity;
 import org.radix.common.ID.EUID;
 
 import com.radixdlt.client.core.atoms.Atom;
-import com.radixdlt.client.core.atoms.UnsignedAtom;
 import com.radixdlt.client.core.crypto.CryptoException;
 import com.radixdlt.client.core.crypto.ECKeyPair;
 import com.radixdlt.client.core.crypto.ECPublicKey;
@@ -20,11 +19,11 @@ class BaseRadixIdentity implements RadixIdentity {
 	}
 
 	@Override
-	public Single<Atom> sign(UnsignedAtom atom) {
+	public Single<Atom> addSignature(Atom atom) {
 		return Single.create(emitter -> {
 			ECSignature signature = myKey.sign(atom.getHash().toByteArray());
 			EUID signatureId = myKey.getUID();
-			emitter.onSuccess(atom.sign(signature, signatureId));
+			emitter.onSuccess(atom.addSignature(signatureId, signature));
 		});
 	}
 

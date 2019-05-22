@@ -19,10 +19,7 @@ import org.radix.serialization2.client.Serialize;
 import org.radix.utils.UInt256s;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
 import com.radixdlt.client.atommodel.accounts.RadixAddress;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -88,7 +85,8 @@ public final class Atom extends SerializableObject {
 		return new Atom(ImmutableList.copyOf(particleGroups), ImmutableMap.copyOf(metaData), ImmutableMap.of());
 	}
 
-	public Atom addSignature(ECSignature signature, EUID signatureId) {
+	// TODO: refactor to utilize an AtomBuilder
+	public Atom addSignature(EUID signatureId, ECSignature signature) {
 		return new Atom(
 			this.particleGroups,
 			this.metaData,

@@ -7,7 +7,6 @@ import org.radix.common.ID.EUID;
 
 import com.radixdlt.client.core.atoms.Atom;
 import com.radixdlt.client.core.atoms.RadixHash;
-import com.radixdlt.client.core.atoms.UnsignedAtom;
 import com.radixdlt.client.core.crypto.ECKeyPair;
 import com.radixdlt.client.core.crypto.ECSignature;
 
@@ -32,12 +31,14 @@ public class BaseRadixIdentityTest {
 		Atom signedAtom = mock(Atom.class);
 		when(signedAtom.getSignature(any())).thenReturn(Optional.of(ecSignature));
 		RadixHash hash = mock(RadixHash.class);
-		UnsignedAtom atom = mock(UnsignedAtom.class);
-		when(atom.sign(any(), any())).thenReturn(signedAtom);
+
+		Atom atom = mock(Atom.class);
+		when(atom.addSignature(any(), any())).thenReturn(signedAtom);
 		when(atom.getHash()).thenReturn(hash);
+
 		BaseRadixIdentity identity = new BaseRadixIdentity(keyPair);
 		TestObserver<Atom> testObserver = TestObserver.create();
-		identity.sign(atom).subscribe(testObserver);
+		identity.addSignature(atom).subscribe(testObserver);
 
 		verify(keyPair, never()).getPrivateKey();
 

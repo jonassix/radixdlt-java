@@ -72,7 +72,6 @@ import com.radixdlt.client.core.RadixUniverse.Ledger;
 import com.radixdlt.client.core.atoms.Atom;
 import com.radixdlt.client.core.ledger.AtomObservation;
 import com.radixdlt.client.core.atoms.ParticleGroup;
-import com.radixdlt.client.core.atoms.UnsignedAtom;
 import com.radixdlt.client.core.crypto.ECKeyPairGenerator;
 import com.radixdlt.client.core.crypto.ECPublicKey;
 import com.radixdlt.client.core.network.RadixNetworkState;
@@ -816,7 +815,7 @@ public class RadixApplicationAPI {
 	 * @param particleGroups particle groups to include in atom
 	 * @return unsigned atom with appropriate fees
 	 */
-	public UnsignedAtom buildAtomWithFee(List<ParticleGroup> particleGroups) {
+	public Atom buildAtomWithFee(List<ParticleGroup> particleGroups) {
 		List<ParticleGroup> allParticleGroups = new ArrayList<>(particleGroups);
 		Map<String, String> metaData = new HashMap<>();
 		metaData.put(Atom.METADATA_TIMESTAMP_KEY, String.valueOf(generateTimestamp()));
@@ -825,7 +824,7 @@ public class RadixApplicationAPI {
 		allParticleGroups.addAll(fee.getSecond());
 		metaData.putAll(fee.getFirst());
 
-		return new UnsignedAtom(ImmutableList.copyOf(allParticleGroups), ImmutableMap.copyOf(metaData));
+		return Atom.create(ImmutableList.copyOf(allParticleGroups), ImmutableMap.copyOf(metaData));
 	}
 
 	/**
@@ -835,7 +834,7 @@ public class RadixApplicationAPI {
 	 * @param action action to build a single atom
 	 * @return a cold single of an atom mapped from an action
 	 */
-	public Single<UnsignedAtom> buildAtom(Action action) {
+	public Single<Atom> buildAtom(Action action) {
 		final Observable<Action> allActions = this.collectActionAndEffects(action).flatMapIterable(l -> l);
 		final Observable<ParticleGroup> statelessParticleGroups = allActions.flatMap(a ->
 			Observable
@@ -901,7 +900,7 @@ public class RadixApplicationAPI {
 
 	private Result buildDisconnectedResult(Action action) {
 		final Single<Atom> atom = this.buildAtom(action)
-			.flatMap(this.identity::sign);
+			.flatMap(this.identity::addSignature);
 
 		return buildDisconnectedAtomSubmit(atom);
 	}
@@ -951,7 +950,7 @@ public class RadixApplicationAPI {
 		return Observable.fromIterable(actions)
 			.concatMap(action ->
 				this.buildAtom(action)
-					.flatMap(this.identity::sign)
+					.flatMap(this.identity::addSignature)
 					.flatMapObservable(this::syncAtom)
 					.takeUntil(AtomObservation::isStore)
 			);
