@@ -3,6 +3,7 @@ package com.radixdlt.client.application.objects;
 import com.radixdlt.client.assets.Amount;
 import com.radixdlt.client.assets.Asset;
 import com.radixdlt.client.core.address.RadixAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 public class TokenTransfer {
@@ -50,7 +51,7 @@ public class TokenTransfer {
 	}
 
 	public Optional<String> getAttachmentAsString() {
-		return getAttachment().map(UnencryptedData::getData).map(String::new);
+		return getAttachment().map(UnencryptedData::getData).map(b -> new String(b, StandardCharsets.UTF_8));
 	}
 
 	public long getTimestamp() {

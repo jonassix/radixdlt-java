@@ -15,6 +15,7 @@ import io.reactivex.Single;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.annotations.Nullable;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 /**
@@ -132,7 +133,7 @@ public class RadixWallet {
 			attachment = new DataBuilder()
 				.addReader(toAddress.getPublicKey())
 				.addReader(api.getMyAddress().getPublicKey())
-				.bytes(message.getBytes()).build();
+				.bytes(message.getBytes(StandardCharsets.UTF_8)).build();
 		} else {
 			attachment = null;
 		}
@@ -198,12 +199,12 @@ public class RadixWallet {
 			attachment = new DataBuilder()
 				.addReader(toAddress.getPublicKey())
 				.addReader(api.getMyPublicKey())
-				.bytes(message.getBytes()).build();
+				.bytes(message.getBytes(StandardCharsets.UTF_8)).build();
 		} else {
 			attachment = null;
 		}
 
-		final byte[] uniqueBytes = unique != null ? unique.getBytes() : null;
+		final byte[] uniqueBytes = unique != null ? unique.getBytes(StandardCharsets.UTF_8) : null;
 
 		final Amount amountToSend = Amount.of(amount, Asset.TEST);
 

@@ -12,6 +12,7 @@ import com.radixdlt.client.core.crypto.ECSignature;
 import io.reactivex.Maybe;
 import io.reactivex.Observable;
 import io.reactivex.observables.GroupedObservable;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Objects;
 import org.slf4j.Logger;
@@ -41,7 +42,7 @@ public class RadixMessaging {
 			.filter(data -> APPLICATION_ID.equals(data.getMetaData().get("application")))
 			.flatMapMaybe(data -> {
 				try {
-					JsonObject jsonObject = parser.parse(new String(data.getData())).getAsJsonObject();
+					JsonObject jsonObject = parser.parse(new String(data.getData(), StandardCharsets.UTF_8)).getAsJsonObject();
 					RadixAddress from = new RadixAddress(jsonObject.get("from").getAsString());
 					RadixAddress to = new RadixAddress(jsonObject.get("to").getAsString());
 					String content = jsonObject.get("content").getAsString();
@@ -85,7 +86,7 @@ public class RadixMessaging {
 		messageJson.addProperty("content", message);
 
 		Data data = new DataBuilder()
-			.bytes(messageJson.toString().getBytes())
+			.bytes(messageJson.toString().getBytes(StandardCharsets.UTF_8))
 			.metaData("application", RadixMessaging.APPLICATION_ID)
 			.addReader(toAddress.getPublicKey())
 			.addReader(myAddress.getPublicKey())

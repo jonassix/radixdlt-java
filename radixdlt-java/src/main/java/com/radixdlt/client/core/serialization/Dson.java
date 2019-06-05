@@ -13,6 +13,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -73,7 +74,7 @@ public class Dson {
 		} else if (type == Primitive.STRING.value) {
 			byte[] buffer = new byte[length];
 			byteBuffer.get(buffer);
-			result = new JsonPrimitive(new String(buffer));
+			result = new JsonPrimitive(new String(buffer, StandardCharsets.UTF_8));
 		} else if (type == Primitive.BYTES.value) {
 			byte[] buffer = new byte[length];
 			byteBuffer.get(buffer);
