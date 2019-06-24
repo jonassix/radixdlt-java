@@ -152,7 +152,6 @@ public class WebSocketClient implements PersistentChannel {
 		}
 		synchronized (lock) {
 			if (!this.state.getValue().equals(WebSocketStatus.CONNECTED)) {
-				LOGGER.error("Most likely a programming bug. Should not end here.");
 				return false;
 			}
 

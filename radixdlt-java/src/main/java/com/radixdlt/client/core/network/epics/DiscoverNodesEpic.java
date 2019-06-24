@@ -35,8 +35,7 @@ public final class DiscoverNodesEpic implements RadixNetworkEpic {
 	public Observable<RadixNodeAction> epic(Observable<RadixNodeAction> updates, Observable<RadixNetworkState> networkState) {
 		Observable<RadixNodeAction> getSeedUniverses = updates
 			.ofType(DiscoverMoreNodesAction.class)
-			.firstOrError()
-			.flatMapObservable(i -> seeds)
+			.flatMap(i -> seeds)
 			.<RadixNodeAction>map(GetUniverseRequestAction::of)
 			.onErrorReturn(DiscoverMoreNodesErrorAction::new);
 
