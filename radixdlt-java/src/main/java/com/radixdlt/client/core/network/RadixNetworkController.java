@@ -124,7 +124,7 @@ public class RadixNetworkController {
 		Observable.merge(updates).subscribe(
 			this::dispatch,
 			e -> {
-				e.printStackTrace();
+				LOGGER.error(e.getMessage());
 				networkState.onError(e);
 			}
 		);
