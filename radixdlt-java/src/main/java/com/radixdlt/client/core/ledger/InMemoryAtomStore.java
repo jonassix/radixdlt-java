@@ -190,19 +190,13 @@ public class InMemoryAtomStore implements AtomStore {
 
 	@Override
 	public Observable<Long> onSync(RadixAddress address) {
-		return Observable.create(emitter -> {
+		return Observable.create((ObservableEmitter<Long> emitter) -> {
 			synchronized (lock) {
 				if (syncedMap.getOrDefault(address, false)) {
 					emitter.onNext(System.currentTimeMillis());
 				}
 
-				final CopyOnWriteArrayList<ObservableEmitter<Long>> syncers;
-				if (!allSyncers.containsKey(address)) {
-					syncers = new CopyOnWriteArrayList<>();
-					allSyncers.put(address, syncers);
-				} else {
-					syncers = allSyncers.get(address);
-				}
+				List<ObservableEmitter<Long>> syncers = allSyncers.computeIfAbsent(address, k -> new CopyOnWriteArrayList<>());
 				syncers.add(emitter);
 				emitter.setCancellable(() -> syncers.remove(emitter));
 			}
@@ -259,15 +253,9 @@ public class InMemoryAtomStore implements AtomStore {
 
 	@Override
 	public Observable<AtomObservation> getAtomObservations(RadixAddress address) {
-		return Observable.create(emitter -> {
+		return Observable.create((ObservableEmitter<AtomObservation> emitter) -> {
 			synchronized (lock) {
-				final CopyOnWriteArrayList<ObservableEmitter<AtomObservation>> observers;
-				if (!allObservers.containsKey(address)) {
-					observers = new CopyOnWriteArrayList<>();
-					allObservers.put(address, observers);
-				} else {
-					observers = allObservers.get(address);
-				}
+				List<ObservableEmitter<AtomObservation>> observers = allObservers.computeIfAbsent(address, k -> new CopyOnWriteArrayList<>());
 				observers.add(emitter);
 				atoms.entrySet().stream()
 					.filter(e -> e.getValue().isStore() && e.getKey().addresses().anyMatch(address::equals))
