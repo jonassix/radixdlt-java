@@ -27,10 +27,6 @@ public class DsonTypeIdResolver extends TypeIdResolverBase {
 		return JsonTypeInfo.Id.CUSTOM;
 	}
 
-	public void registerSubtype(Class<?> type, String name) {
-		// not used
-	}
-
 	@Override
 	public String idFromValue(Object value) {
 		return this.idLookup.getIdForClass(value.getClass());

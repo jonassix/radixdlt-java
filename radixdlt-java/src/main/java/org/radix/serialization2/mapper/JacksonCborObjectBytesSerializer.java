@@ -13,10 +13,6 @@ class JacksonCborObjectBytesSerializer<T> extends StdSerializer<T> {
 	private final byte prefix;
 	private final Function<T, byte[]> toByteArrayMapper;
 
-	JacksonCborObjectBytesSerializer(byte prefix, Function<T, byte[]> toByteArrayMapper) {
-		this(null, prefix, toByteArrayMapper);
-	}
-
 	JacksonCborObjectBytesSerializer(Class<T> t, byte prefix, Function<T, byte[]> toByteArrayMapper) {
 		super(t);
 		this.prefix = prefix;

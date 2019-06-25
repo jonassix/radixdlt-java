@@ -19,7 +19,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.FilterProvider;
-import com.fasterxml.jackson.dataformat.cbor.CBORFactory;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jsonorg.JsonOrgModule;
 import com.radixdlt.client.atommodel.accounts.RadixAddress;
@@ -39,7 +38,7 @@ public class JacksonCborMapper extends ObjectMapper {
 	}
 
 	private static JsonFactory createCborFactory() {
-		return new CBORFactory();
+		return new RadixCBORFactory();
 	}
 
 	/**
