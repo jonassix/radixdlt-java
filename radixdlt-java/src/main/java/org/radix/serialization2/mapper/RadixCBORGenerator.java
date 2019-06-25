@@ -1,5 +1,7 @@
 package org.radix.serialization2.mapper;
 
+//CHECKSTYLE:OFF
+
 import java.util.Arrays;
 import java.io.*;
 import java.math.BigDecimal;

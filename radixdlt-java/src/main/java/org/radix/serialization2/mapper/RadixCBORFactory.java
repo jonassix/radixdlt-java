@@ -1,5 +1,7 @@
 package org.radix.serialization2.mapper;
 
+//CHECKSTYLE:OFF
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;

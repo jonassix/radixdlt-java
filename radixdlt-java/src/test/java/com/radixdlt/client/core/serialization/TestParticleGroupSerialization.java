@@ -1,9 +1,7 @@
 package com.radixdlt.client.core.serialization;
 
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.radix.serialization2.Serialization;
-import org.radix.serialization2.SerializationException;
 import org.radix.serialization2.DsonOutput.Output;
 import org.radix.serialization2.client.Serialize;
 
@@ -14,15 +12,9 @@ import com.radixdlt.client.core.atoms.ParticleGroup;
 import static org.junit.Assert.assertEquals;
 
 public class TestParticleGroupSerialization {
-	static Serialization serialization;
-
-	@BeforeClass
-	public static void setupSerializer() {
-		serialization = Serialize.getInstance();
-	}
-
 	@Test
-	public void testLargeStringSerialization() throws SerializationException {
+	public void testLargeStringSerialization() {
+		Serialization serialization = Serialize.getInstance();
 		long timestamp = 0x0001020304050607L;
 
 		// "massive" must be greater length than (16000 / 4) - 4 = 3996
