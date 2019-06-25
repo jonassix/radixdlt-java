@@ -7,6 +7,7 @@ import com.radixdlt.client.core.network.RadixNodeAction;
 import com.radixdlt.client.core.network.RadixNode;
 import com.radixdlt.client.core.network.actions.AddNodeAction;
 import com.radixdlt.client.core.network.actions.DiscoverMoreNodesAction;
+import com.radixdlt.client.core.network.actions.DiscoverMoreNodesErrorAction;
 import com.radixdlt.client.core.network.actions.GetLivePeersRequestAction;
 import com.radixdlt.client.core.network.actions.GetLivePeersResultAction;
 import com.radixdlt.client.core.network.actions.GetNodeDataRequestAction;
@@ -34,9 +35,9 @@ public final class DiscoverNodesEpic implements RadixNetworkEpic {
 	public Observable<RadixNodeAction> epic(Observable<RadixNodeAction> updates, Observable<RadixNetworkState> networkState) {
 		Observable<RadixNodeAction> getSeedUniverses = updates
 			.ofType(DiscoverMoreNodesAction.class)
-			.firstOrError()
-			.flatMapObservable(i -> seeds)
-			.map(GetUniverseRequestAction::of);
+			.flatMap(i -> seeds)
+			.<RadixNodeAction>map(GetUniverseRequestAction::of)
+			.onErrorReturn(DiscoverMoreNodesErrorAction::new);
 
 		// TODO: Store universes in node table instead and filter out node in FindANodeEpic
 		Observable<RadixNodeAction> seedUniverseMismatch = updates

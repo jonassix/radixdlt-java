@@ -71,7 +71,9 @@ public final class FetchAtomsEpic implements RadixNetworkEpic {
 								ws.close();
 								return Completable.complete();
 							})
-					).subscribe();
+					)
+					.onErrorComplete()
+					.subscribe();
 			});
 		});
 	}

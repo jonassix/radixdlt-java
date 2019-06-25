@@ -120,8 +120,14 @@ public class RadixNetworkController {
 			.map(epic -> epic.epic(connectableReducedNodeActions, networkState))
 			.collect(Collectors.toSet());
 
-		// FIXME: Cleanup disposable
-		Observable.merge(updates).subscribe(this::dispatch);
+		// FIXME: Cleanup disposable and error handling
+		Observable.merge(updates).subscribe(
+			this::dispatch,
+			e -> {
+				LOGGER.error(e.getMessage());
+				networkState.onError(e);
+			}
+		);
 
 		this.reducedNodeActions = connectableReducedNodeActions;
 
