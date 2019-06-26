@@ -25,8 +25,13 @@ import static com.fasterxml.jackson.dataformat.cbor.CBORConstants.*;
  * {@link com.fasterxml.jackson.dataformat.cbor.CBORGenerator}.
  * The only changes have been to change {@code _writeChunkedString(...)}
  * to the slower but more canonical {@code writeLongString(...)}.
+ * <p>
+ * The <a href="https://github.com/FasterXML/jackson-dataformats-binary">
+ * Jackson-dataformats-binary</a> package, and therefore this file, is
+ * published under the <a href="http://www.apache.org/licenses/LICENSE-2.0.txt">
+ * Apache License 2.0</a>
  *
- * @author Tatu Saloranta
+ * @author Tatu Saloranta (original Jackson file)
  */
 public class RadixCBORGenerator extends GeneratorBase
 {

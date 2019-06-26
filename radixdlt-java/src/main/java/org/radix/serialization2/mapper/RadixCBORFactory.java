@@ -40,8 +40,13 @@ import com.fasterxml.jackson.dataformat.cbor.CBORParserBootstrapper;
  * {@link com.fasterxml.jackson.dataformat.cbor.CBORFactory}.
  * The only changes have been to change references to
  * {@code CBORGenerator} to {@link RadixCBORGenerator}.
+ * <p>
+ * The <a href="https://github.com/FasterXML/jackson-dataformats-binary">
+ * Jackson-dataformats-binary</a> package, and therefore this file, is
+ * published under the <a href="http://www.apache.org/licenses/LICENSE-2.0.txt">
+ * Apache License 2.0</a>
  *
- * @author Tatu Saloranta
+ * @author Tatu Saloranta (original Jackson file)
  */
 public class RadixCBORFactory extends JsonFactory
 {
