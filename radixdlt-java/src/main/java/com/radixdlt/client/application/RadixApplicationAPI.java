@@ -2,6 +2,7 @@ package com.radixdlt.client.application;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.radixdlt.client.application.translate.StageActionException;
 import com.radixdlt.client.application.translate.ShardedParticleStateId;
 import com.radixdlt.client.application.translate.tokens.TokenUnitConversions;
 import com.radixdlt.client.application.translate.unique.PutUniqueIdAction;
@@ -10,12 +11,14 @@ import com.radixdlt.client.core.atoms.AtomStatus;
 import com.radixdlt.client.core.atoms.particles.Particle;
 import com.radixdlt.client.core.atoms.particles.RRI;
 import com.radixdlt.client.core.ledger.AtomStore;
-import com.radixdlt.client.core.network.RadixNetworkController;
+import com.radixdlt.client.core.network.RadixNode;
+import com.radixdlt.client.core.network.RadixNodeAction;
+import com.radixdlt.client.core.network.actions.DiscoverMoreNodesAction;
 import com.radixdlt.client.core.network.actions.SubmitAtomCompleteAction;
 import com.radixdlt.client.core.network.actions.SubmitAtomRequestAction;
+import com.radixdlt.client.core.network.actions.SubmitAtomSendAction;
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +31,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import java.util.stream.StreamSupport;
 import org.radix.common.tuples.Pair;
 import org.radix.utils.RadixConstants;
 import org.slf4j.Logger;
@@ -372,7 +374,6 @@ public class RadixApplicationAPI {
 		return universe.getAddressFrom(publicKey);
 	}
 
-
 	/**
 	 * Idempotent method which prefetches atoms in user's account
 	 * TODO: what to do when no puller available
@@ -398,6 +399,24 @@ public class RadixApplicationAPI {
 		} else {
 			return Disposables.disposed();
 		}
+	}
+
+	/**
+	 * Retrieves atoms until the node returns a synced message.
+	 * @param address the address to pull atoms for
+	 * @return a cold completable which on subscribe pulls atoms from a source
+	 */
+	public Completable pullOnce(RadixAddress address) {
+		return Completable.create(emitter -> {
+			Disposable d = universe.getAtomPuller()
+				.pull(address).subscribe();
+
+			emitter.setCancellable(d::dispose);
+
+			universe.getAtomStore().onSync(address).firstOrError()
+				.ignoreElement()
+				.subscribe(emitter::onComplete, emitter::onError);
+		});
 	}
 
 	/**
@@ -789,8 +808,8 @@ public class RadixApplicationAPI {
 	 */
 	public Result execute(Action action) {
 		Transaction transaction = this.createTransaction();
-		transaction.execute(action);
-		return transaction.commit();
+		transaction.stage(action);
+		return transaction.commitAndPush();
 	}
 
 	private long generateTimestamp() {
@@ -820,27 +839,95 @@ public class RadixApplicationAPI {
 	 * Represents an atomic transaction to be committed to the ledger
 	 */
 	public final class Transaction {
-		private final ArrayList<Action> actions = new ArrayList<>();
+		private final String uuid;
+		private List<Action> workingArea = new ArrayList<>();
+
 		private Transaction() {
+			this.uuid = UUID.randomUUID().toString();
 		}
 
 		/**
-		 * Execute an action within this transaction
-		 * @param action the action to execute
+		 * Add an action to the working area
+		 * @param action action to add to the working area
 		 */
-		public void execute(Action action) {
-			this.actions.add(action);
+		public void addToWorkingArea(Action action) {
+			workingArea.add(action);
+		}
+
+		/**
+		 * Retrieves the shards and particle types required to execute the
+		 * actions in the current working area.
+		 *
+		 * @return set of shard + particle types
+		 */
+		public Set<ShardedParticleStateId> getWorkingAreaRequirements() {
+			return workingArea.stream()
+				.filter(a -> requiredStateMappers.containsKey(a.getClass()))
+				.flatMap(a -> requiredStateMappers.get(a.getClass()).apply(a).stream())
+				.collect(Collectors.toSet());
+		}
+
+		/**
+		 * Move all actions in the current working area to staging
+		 */
+		public void stageWorkingArea() throws StageActionException {
+			for (Action action : workingArea) {
+				stage(action);
+			}
+			workingArea.clear();
+		}
+
+		/**
+		 * Add an action to staging area in preparation for commitAndPush.
+		 * Collects the necessary particles to make the action happen.
+		 *
+		 * @param action action to add to staging area.
+		 */
+		public void stage(Action action) {
+			BiFunction<Action, Stream<Particle>, List<ParticleGroup>> statefulMapper = actionMappers.get(action.getClass());
+			if (statefulMapper == null) {
+				throw new IllegalArgumentException("Unknown action class: " + action.getClass() + ". Available: " + actionMappers.keySet());
+			}
+
+			Function<Action, Set<ShardedParticleStateId>> requiredStateMapper = requiredStateMappers.get(action.getClass());
+			Set<ShardedParticleStateId> required = requiredStateMapper != null ? requiredStateMapper.apply(action) : ImmutableSet.of();
+			Stream<Particle> particles = required.stream()
+				.flatMap(ctx -> universe.getAtomStore().getUpParticles(ctx.address(), uuid).filter(ctx.particleClass()::isInstance));
+
+			List<ParticleGroup> pgs = statefulMapper.apply(action, particles);
+			for (ParticleGroup pg : pgs) {
+				universe.getAtomStore().stageParticleGroup(uuid, pg);
+			}
+		}
+
+		/**
+		 * Creates an atom composed of all of the currently staged particles.
+		 * @return an unsigned atom
+		 */
+		public UnsignedAtom buildAtom() {
+			List<ParticleGroup> pgs = universe.getAtomStore().getStagedAndClear(uuid);
+			return buildAtomWithFee(pgs);
 		}
 
 		/**
 		 * Commit the transaction onto the ledger
 		 * @return the results of committing
 		 */
-		public Result commit() {
-			final Single<Atom> atom = buildAtom(actions)
-				.flatMap(identity::sign);
+		public Result commitAndPush() {
+			final UnsignedAtom unsignedAtom = buildAtom();
+			final Single<Atom> atom = identity.sign(unsignedAtom);
+			return createAtomSubmission(atom, false, null).connect();
+		}
 
-			return createAtomSubmission(atom, false).connect();
+		/**
+		 * Commit the transaction onto the ledger
+		 * @param originNode the originNode to push to
+		 * @return the results of committing
+		 */
+		public Result commitAndPush(RadixNode originNode) {
+			final UnsignedAtom unsignedAtom = buildAtom();
+			final Single<Atom> atom = identity.sign(unsignedAtom);
+			return createAtomSubmission(atom, false, originNode).connect();
 		}
 	}
 
@@ -854,87 +941,6 @@ public class RadixApplicationAPI {
 		return new Transaction();
 	}
 
-	private void stageActions(String uuid, Iterable<Action> actions) {
-		for (Action action : actions) {
-			BiFunction<Action, Stream<Particle>, List<ParticleGroup>> statefulMapper = actionMappers.get(action.getClass());
-			if (statefulMapper == null) {
-				throw new IllegalArgumentException("Unknown action class: " + action.getClass() + ". Available: " + actionMappers.keySet());
-			}
-
-			Function<Action, Set<ShardedParticleStateId>> requiredStateMapper = requiredStateMappers.get(action.getClass());
-			Set<ShardedParticleStateId> required = requiredStateMapper != null ? requiredStateMapper.apply(action) : ImmutableSet.of();
-			Stream<Particle> particles = required.stream()
-				.flatMap(ctx -> universe.getAtomStore()
-					.getUpParticles(ctx.address(), uuid)
-					.filter(ctx.particleClass()::isInstance)
-				);
-
-			List<ParticleGroup> pgs = statefulMapper.apply(action, particles);
-			for (ParticleGroup pg : pgs) {
-				universe.getAtomStore().stageParticleGroup(uuid, pg);
-			}
-		}
-	}
-
-	/**
-	 * Returns a cold single of an unsigned atom given a user action. Note that this is
-	 * method will always return a unique atom even if given equivalent actions
-	 *
-	 * @param action action to build a single atom
-	 * @return a cold single of an atom mapped from an action
-	 */
-	public Single<UnsignedAtom> buildAtom(Action action) {
-		return buildAtom(Collections.singletonList(action));
-	}
-
-	/**
-	 * Returns a cold single of an unsigned atom given an ordered iterable of user actions.
-	 * Note that this method will always return a unique atom even if given equivalent actions
-	 *
-	 * @param actions ordered actions to build a single atom
-	 * @return a cold single of an atom mapped from an action
-	 */
-	public Single<UnsignedAtom> buildAtom(Iterable<Action> actions) {
-		final Set<ShardedParticleStateId> requiredState = StreamSupport.stream(actions.spliterator(), false)
-			.filter(a -> requiredStateMappers.containsKey(a.getClass()))
-			.flatMap(a -> requiredStateMappers.get(a.getClass()).apply(a).stream())
-			.collect(Collectors.toSet());
-		final String uuid = UUID.randomUUID().toString();
-
-		return Completable.create(emitter -> {
-			Map<RadixAddress, Disposable> disposables = requiredState.stream()
-				.map(ShardedParticleStateId::address)
-				.distinct()
-				.collect(Collectors.toMap(
-					addr -> addr,
-					addr -> universe.getAtomPuller().pull(addr).subscribe()
-				));
-
-			Observable.fromIterable(requiredState)
-				.map(ShardedParticleStateId::address)
-				.flatMapSingle(addr -> universe.getAtomStore()
-					.onSync(addr)
-					.firstOrError()
-					.doOnSuccess(i -> disposables.get(addr).dispose())
-				)
-				.ignoreElements()
-				.subscribe(() -> {
-					try {
-						stageActions(uuid, actions);
-					} catch (Exception e) {
-						emitter.onError(e);
-						return;
-					}
-					emitter.onComplete();
-				}, emitter::onError);
-		})
-			.andThen(Single.create(emitter -> {
-				List<ParticleGroup> pgs = universe.getAtomStore().getStagedAndClear(uuid);
-				emitter.onSuccess(buildAtomWithFee(pgs));
-			}));
-	}
-
-
 	/**
 	 * Low level call to submit an atom into the network.
 	 * @param atom atom to submit
@@ -942,7 +948,7 @@ public class RadixApplicationAPI {
 	 * @return the result of the submission
 	 */
 	public Result submitAtom(Atom atom, boolean completeOnStoreOnly) {
-		return createAtomSubmission(Single.just(atom), completeOnStoreOnly).connect();
+		return createAtomSubmission(Single.just(atom), completeOnStoreOnly, null).connect();
 	}
 
 	/**
@@ -952,21 +958,26 @@ public class RadixApplicationAPI {
 	 * @return the result of the submission
 	 */
 	public Result submitAtom(Atom atom) {
-		return createAtomSubmission(Single.just(atom), false).connect();
+		return createAtomSubmission(Single.just(atom), false, null).connect();
 	}
 
-	private Result createAtomSubmission(Single<Atom> atom, boolean completeOnStoreOnly) {
+	private Result createAtomSubmission(Single<Atom> atom, boolean completeOnStoreOnly, RadixNode originNode) {
 		final ConnectableObservable<SubmitAtomAction> updates = atom
 			.flatMapObservable(a -> {
-				SubmitAtomRequestAction initialAction = SubmitAtomRequestAction.newRequest(a, completeOnStoreOnly);
+				final SubmitAtomAction initialAction;
+				if (originNode == null) {
+					initialAction = SubmitAtomRequestAction.newRequest(a, completeOnStoreOnly);
+				} else {
+					initialAction = SubmitAtomSendAction.of(UUID.randomUUID().toString(), a, originNode, completeOnStoreOnly);
+				}
 				Observable<SubmitAtomAction> status =
-					getNetworkController().getActions().ofType(SubmitAtomAction.class)
+					this.universe.getNetworkController().getActions().ofType(SubmitAtomAction.class)
 						.filter(u -> u.getUuid().equals(initialAction.getUuid()))
 						.takeWhile(s -> !(s instanceof SubmitAtomCompleteAction));
 				ConnectableObservable<SubmitAtomAction> replay = status.replay();
 				replay.connect();
 
-				getNetworkController().dispatch(initialAction);
+				this.universe.getNetworkController().dispatch(initialAction);
 
 				return replay;
 			})
@@ -985,6 +996,14 @@ public class RadixApplicationAPI {
 	}
 
 	/**
+	 * Dispatches a discovery request, the result of which would
+	 * be viewable via getNetworkState()
+	 */
+	public void discoverNodes() {
+		this.universe.getNetworkController().dispatch(DiscoverMoreNodesAction.instance());
+	}
+
+	/**
 	 * Get a stream of updated network states as they occur.
 	 *
 	 * @return a hot observable of the current network state
@@ -994,12 +1013,12 @@ public class RadixApplicationAPI {
 	}
 
 	/**
-	 * Low level call to retrieve the network controller used
-	 * by the API.
+	 * Low level call to retrieve the actions occurring at the network
+	 * level.
 	 *
-	 * @return the network controller
+	 * @return a hot observable of network actions as they occur
 	 */
-	public RadixNetworkController getNetworkController() {
-		return this.universe.getNetworkController();
+	public Observable<RadixNodeAction> getNetworkActions() {
+		return this.universe.getNetworkController().getActions();
 	}
 }
