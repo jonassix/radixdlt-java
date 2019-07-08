@@ -10,6 +10,7 @@ import org.radix.common.ID.AID;
 import org.radix.common.ID.EUID;
 import org.radix.serialization2.DsonOutput;
 import org.radix.serialization2.SerializerId2;
+import org.radix.serialization2.client.NonVersionedSerializableObject;
 import org.radix.serialization2.client.SerializableObject;
 import org.radix.serialization2.client.Serialize;
 
@@ -30,7 +31,7 @@ import java.util.stream.Stream;
  * in a blockchain) and defines the actions that can be issued onto the ledger.
  */
 @SerializerId2("radix.atom")
-public final class Atom extends SerializableObject {
+public final class Atom extends NonVersionedSerializableObject {
 	public static final String METADATA_TIMESTAMP_KEY = "timestamp";
 	public static final String METADATA_POW_NONCE_KEY = "powNonce";
 
