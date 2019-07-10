@@ -26,14 +26,14 @@ import org.radix.common.ID.EUID;
 import org.radix.serialization2.DsonOutput;
 import org.radix.serialization2.DsonOutput.Output;
 import org.radix.serialization2.SerializerId2;
-import org.radix.serialization2.client.SerializableObject;
+import org.radix.serialization2.client.NonVersionedSerializableObject;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.radixdlt.client.core.atoms.RadixHash;
 
 
 @SerializerId2("crypto.ec_key_pair")
-public class ECKeyPair extends SerializableObject {
+public class ECKeyPair extends NonVersionedSerializableObject {
 	@JsonProperty("public")
 	@DsonOutput(Output.ALL)
 	private ECPublicKey publicKey;

@@ -10,13 +10,13 @@ import org.bouncycastle.util.encoders.Base64;
 import org.radix.serialization2.DsonOutput;
 import org.radix.serialization2.DsonOutput.Output;
 import org.radix.serialization2.SerializerId2;
-import org.radix.serialization2.client.SerializableObject;
+import org.radix.serialization2.client.NonVersionedSerializableObject;
 import org.radix.utils.primitives.Bytes;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @SerializerId2("crypto.ecdsa_signature")
-public class ECSignature extends SerializableObject {
+public class ECSignature extends NonVersionedSerializableObject {
 	private byte[] r;
 	private byte[] s;
 
