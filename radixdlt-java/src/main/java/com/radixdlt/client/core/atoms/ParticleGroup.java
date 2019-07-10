@@ -12,7 +12,6 @@ import java.util.stream.Stream;
 import org.radix.serialization2.DsonOutput;
 import org.radix.serialization2.SerializerId2;
 import org.radix.serialization2.client.NonVersionedSerializableObject;
-import org.radix.serialization2.client.SerializableObject;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
