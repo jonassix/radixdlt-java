@@ -135,7 +135,9 @@ public class MutableSupplyTokenDefinitionParticle extends Particle implements Id
 	public String toString() {
 		String tokenPermissionsStr = (tokenPermissions == null)
 			? "null"
-			: tokenPermissions.entrySet().stream().map(e -> String.format("%s:%s", e.getKey().toString().toLowerCase(), e.getValue().toString().toLowerCase())).collect(Collectors.joining(","));
+			: tokenPermissions.entrySet().stream()
+				.map(e -> String.format("%s:%s", e.getKey().toString().toLowerCase(), e.getValue().toString().toLowerCase()))
+				.collect(Collectors.joining(","));
 		return String.format("%s[%s (%s:%s), (%s:%s)]", getClass().getSimpleName(),
 			String.valueOf(this.rri), name, description,
 			String.valueOf(granularity), tokenPermissionsStr);
